@@ -1,0 +1,52 @@
+[
+  {
+    "name": "chicken",
+    "url": "https://menu-img.mcd.cn/pcm/prod/menu/ProductPool/product/MS_1450_320.png",
+    "bytes": 173930
+  },
+  {
+    "name": "spicy",
+    "url": "https://menu-img.mcd.cn/pcm/prod/menu/20260325/product/MS_1440_320.png",
+    "bytes": 39081
+  },
+  {
+    "name": "grilled",
+    "url": "https://menu-img.mcd.cn/pcm/prod/menu/20241008/product/MS_1406_320.png",
+    "bytes": 39568
+  },
+  {
+    "name": "cheese",
+    "url": "https://menu-img.mcd.cn/pcm/prod/menu/20260309/product/MS_1120_320.png",
+    "bytes": 31152
+  },
+  {
+    "name": "fish",
+    "url": "https://menu-img.mcd.cn/pcm/prod/menu/20260101/product/MS_1600_320.png",
+    "bytes": 28073
+  },
+  {
+    "name": "fries",
+    "url": "https://menu-img.mcd.cn/pcm/prod/menu/20250523/product/MS_G4810_320_1747877491921.png",
+    "bytes": 23929
+  },
+  {
+    "name": "nuggets",
+    "url": "https://menu-img.mcd.cn/pcm/prod/menu/20260529/product/MS_G1401_320.png",
+    "bytes": 34179
+  },
+  {
+    "name": "corn",
+    "url": "https://menu-img.mcd.cn/pcm/prod/menu/ProductPool/product/MS_G4437_320.png",
+    "bytes": 101076
+  },
+  {
+    "name": "cola",
+    "url": "https://menu-img.mcd.cn/pcm/prod/menu/ProductPool/product/MS_9900008751_320.gif",
+    "bytes": 61982
+  },
+  {
+    "name": "coffee",
+    "url": "https://menu-img.mcd.cn/pcm/prod/menu/20260422/product/MS_G507374_320.gif",
+    "bytes": 86003
+  }
+]

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#D9252A">
+  <meta name="description" content="选好预算和想吃的餐品，生成可以分享、修改和复用的麦当劳点餐攻略。">
+  <title>麦麦抄作业 · 今天这顿，照着点</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="麦麦抄作业首页"><span class="brand-icon" aria-hidden="true">抄</span><span>麦麦抄作业</span></a>
+    <div class="header-actions"><span id="mode-label" class="mode-label">正在连接</span><button id="connection-button" class="text-button" type="button">连接麦当劳</button></div>
+  </header>
+  <main class="workspace">
+    <div class="page-heading"><div><h1>今天这顿，照着点。</h1><p>选你想吃的，找到预算内的搭配，再分享给朋友。</p></div><span class="meal-time">到店取餐 · 一人份</span></div>
+    <section id="shared-banner" class="shared-banner" hidden></section>
+    <div class="workspace-grid">
+      <aside class="composer" aria-label="搭配条件">
+        <form id="recipe-form">
+          <div class="section-title"><h2>先选一家店</h2><button id="store-button" type="button" class="text-button">换门店</button></div>
+          <button id="selected-store" class="store-summary" type="button"><span class="store-symbol" aria-hidden="true">⌖</span><span><strong>正在读取门店</strong><small>稍等一下</small></span><span aria-hidden="true">⌄</span></button>
+          <label class="field-label" for="budget">这顿预算</label>
+          <div class="budget-field"><span aria-hidden="true">¥</span><input id="budget" name="budget" type="number" inputmode="decimal" min="1" max="500" step="0.1" value="30" required aria-label="预算，单位元"><span>以内</span></div>
+          <div class="budget-presets" aria-label="快捷预算"><button type="button" data-budget="20">20 元</button><button type="button" data-budget="30" class="active">30 元</button><button type="button" data-budget="40">40 元</button><button type="button" data-budget="50">50 元</button></div>
+          <div class="section-title wants-title"><h2>有什么一定要吃？</h2><span>可多选</span></div>
+          <div id="must-have" class="choice-chips" aria-label="必点餐品"></div>
+          <label class="check-row"><input id="with-drink" type="checkbox" checked><span>搭配一杯饮料</span></label>
+          <label class="check-row"><input id="with-side" type="checkbox" checked><span>搭配一份小食</span></label>
+          <button id="generate-button" class="primary-button" type="submit">帮我搭一份</button>
+          <p id="source-note" class="source-note">正在读取菜单</p>
+        </form>
+      </aside>
+      <section class="results" aria-labelledby="results-title" aria-live="polite" aria-busy="true">
+        <div class="results-heading"><div><h2 id="results-title">可以这样点</h2><p id="results-subtitle">按你的预算和口味，选一份合适的。</p></div><span id="result-count"></span></div>
+        <div id="error-message" class="error-message" role="alert" hidden></div>
+        <div id="recipe-results" class="recipe-results"><div class="loading-state"><span class="spinner" aria-hidden="true"></span>正在准备菜单…</div></div>
+        <p class="results-footnote">分享搭配后，朋友可以换门店重新计价。价格和餐品以所选门店核验结果为准。</p>
+      </section>
+    </div>
+  </main>
+  <footer class="site-footer"><span>麦麦抄作业 · 非官方参赛作品</span><a href="https://github.com/M-China/mcd-mcp-server" target="_blank" rel="noopener noreferrer">麦当劳 MCP 开放能力</a></footer>
+  <dialog id="store-dialog" aria-labelledby="store-dialog-title">
+    <form id="store-search-form"><div class="dialog-heading"><h2 id="store-dialog-title">换一家门店</h2><button type="button" class="icon-button close-dialog" aria-label="关闭">×</button></div><div class="store-search"><label>城市<input id="search-city" value="上海" maxlength="30" required></label><label>地址或门店关键词<input id="search-keyword" placeholder="例如：人民广场" maxlength="80" required></label><button type="submit" class="primary-button">找门店</button></div><p id="store-search-note" class="dialog-note"></p><div id="store-list" class="store-list"></div></form>
+  </dialog>
+  <dialog id="connection-dialog" aria-labelledby="connection-title">
+    <form id="connection-form"><div class="dialog-heading"><h2 id="connection-title">连接你的麦当劳账户</h2><button type="button" class="icon-button close-dialog" aria-label="关闭">×</button></div><p>连接后，按你选的门店读取菜单，并核验搭配价格。</p><label class="field-label" for="token">MCP Token</label><input id="token" type="password" autocomplete="off" spellcheck="false" placeholder="粘贴你在开放平台申请的 Token"><p class="dialog-note">Token 仅保留在本次页面会话中，分享链接和攻略图片不会包含它。</p><div class="dialog-actions"><button type="button" id="demo-button" class="secondary-button">体验演示模式</button><button type="submit" class="primary-button">连接并读取菜单</button></div><a class="platform-link" href="https://open.mcd.cn/mcp" target="_blank" rel="noopener noreferrer">去麦当劳开放平台申请 Token</a></form>
+  </dialog>
+  <dialog id="edit-dialog" aria-labelledby="edit-title">
+    <form id="edit-form"><div class="dialog-heading"><h2 id="edit-title">把这份搭配改成你的</h2><button type="button" class="icon-button close-dialog" aria-label="关闭">×</button></div><div id="edit-items" class="edit-items"></div><div class="dialog-actions"><button type="button" class="secondary-button close-dialog">取消</button><button id="edit-submit" type="submit" class="primary-button">重新计价</button></div><p id="edit-error" class="error-message" hidden></p></form>
+  </dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>
