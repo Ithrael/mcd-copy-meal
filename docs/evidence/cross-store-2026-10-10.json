@@ -1,0 +1,67 @@
+{
+  "description": "脱敏后的真实接收端 /api/reprice 响应字段节选；不作为运行时菜单或长期报价。",
+  "priorQuote": {
+    "storeCode": "1450713",
+    "storeName": "麦当劳上海黄浦华旭国际大厦餐厅",
+    "date": "2026-10-09",
+    "total": 2740,
+    "productCode": "9900013304",
+    "source": "既有真实联调记录，见 MCP_INTEGRATION.md"
+  },
+  "recipientQuote": {
+    "store": {
+      "code": "1450034",
+      "name": "麦当劳上海徐家汇餐厅",
+      "address": "天钥桥路1号（徐家汇1#店）",
+      "city": "上海"
+    },
+    "total": 2840,
+    "checkedAt": "2026-10-09T16:48:57.756Z",
+    "items": [
+      {
+        "code": "9900015187",
+        "name": "人气经典随心配",
+        "quantity": 1,
+        "selections": [
+          {
+            "name": "蓝区",
+            "items": [
+              {
+                "name": "麦香鸡",
+                "quantity": 1
+              }
+            ]
+          },
+          {
+            "name": "粉区",
+            "items": [
+              {
+                "name": "无糖可口可乐中杯",
+                "quantity": 1
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "code": "4810",
+        "name": "中薯条",
+        "quantity": 1
+      }
+    ],
+    "source": "麦当劳官方实时核价",
+    "mode": "live"
+  },
+  "browserChecks": {
+    "preservedSelections": true,
+    "remainingBudgetCents": 160,
+    "consoleErrors": 0,
+    "png": {
+      "width": 1080,
+      "height": 1282,
+      "foodImages": 2,
+      "qrImages": 1
+    },
+    "localPreviewOnly": true
+  }
+}
