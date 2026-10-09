@@ -1,11 +1,31 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { demoCatalog, demoQuote } from '../lib/demo.js';
-import { detailedProduct, selectProduct, foodItems } from '../lib/meals.js';
+import { detailedProduct, selectProduct, foodItems, defaultModification } from '../lib/meals.js';
 import { candidates, generateRecipes, resolveItems, validateOptions } from '../lib/recipes.js';
 import { quoteArguments } from '../lib/mcd.js';
 import { encodeShare, decodeShare } from '../public/share.js';
 import { readFile } from 'node:fs/promises';
+
+test('必点主食不靠多加另一份非必点主食满足；明确要两种主食时保留两种',async()=>{
+  const catalog=demoCatalog();
+  const options=validateOptions({budget:100,mustHave:['板烧鸡腿堡'],includeSide:true,includeDrink:true});
+  const result=await generateRecipes(catalog,options,items=>demoQuote(catalog,items));
+  assert.ok(result.recipes.length);
+  for(const recipe of result.recipes)assert.deepEqual(foodItems(recipe.items).filter(food=>food.kind==='main').map(food=>food.name),['板烧鸡腿堡']);
+  const double=await generateRecipes(catalog,{...options,mustHave:['板烧鸡腿堡','麦香鸡']},items=>demoQuote(catalog,items));
+  assert.ok(double.recipes.length);
+  for(const recipe of double.recipes)assert.deepEqual(new Set(foodItems(recipe.items).filter(food=>food.kind==='main').map(food=>food.name)),new Set(['板烧鸡腿堡','麦香鸡']));
+});
+
+test('官方默认特制保留未选项的 unselectedKey，不把未选项改成已选',()=>{
+  const modification=defaultModification({modification:{items:[{minValues:1,values:[
+    {code:'sauce',selectedKey:'on',unselectedKey:'off',selectedQuantity:1},
+    {code:'onion',selectedKey:'on',unselectedKey:'off',selectedQuantity:0},
+    {code:'ice',selectedKey:'less',selectedQuantity:0}
+  ]}]}});
+  assert.deepEqual(modification,{values:[{code:'sauce',key:'on',quantity:1},{code:'onion',key:'off',quantity:0}]});
+});
 
 test('单轮饮料规格的必点杯型进入候选，低预算不降级为默认杯型',async()=>{
   const drink=detailedProduct({code:'cola-group',name:'可乐',kind:'drink',price:1000},{name:'可乐',rounds:[{id:1,name:'杯型',minQuantity:1,maxQuantity:1,choices:[{code:'medium',name:'可乐中杯',quantity:1},{code:'large',name:'可乐大杯',quantity:0,diffPrice:'+ ¥2'}]}]});

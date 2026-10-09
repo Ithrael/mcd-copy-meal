@@ -59,7 +59,7 @@ function renderRecipes(recipes, info = {}) {
       <div class="recipe-body"><div class="recipe-title"><h3>${escape(recipe.title)}</h3><span class="price"><small>¥</small>${money(recipe.total)}</span></div>
       <div class="food-lineup">${recipe.items.map(item=>`<div class="food-tile">${item.image?`<img src="${escape(item.image)}" alt="${escape(item.name)}" width="78" height="78">`:''}<div><strong>${escape(item.name)}</strong><small>× ${item.quantity}</small></div></div>`).join('')}</div>
       ${recipe.items.some(item=>item.selections)?`<div class="order-breakdown">${recipe.items.filter(item=>item.selections).map(item=>`<div><strong>${escape(item.name)}：每份选</strong><span>${item.selections.flatMap(group=>group.items.map(row=>`${escape(row.name)} × ${row.quantity}`)).join(' ＋ ')}</span></div>`).join('')}</div>`:''}
-      <div class="recipe-explanation">${left===null?'':`<span class="${left>=0?'budget-left':'missing-items'}">${left>=0?`预算还剩 ¥${money(left)}`:`超出预算 ¥${money(-left)}`}</span>`}${recipe.offer?`<span>${escape(recipe.offer)}</span>`:''}${recipe.discount>0?`<span>本次优惠 ¥${money(recipe.discount)}</span>`:''}</div></div>
+      <div class="recipe-explanation">${left===null?'':`<span class="${left>=0?'budget-left':'missing-items'}">${left>=0?`预算还剩 ¥${money(left)}`:`超出预算 ¥${money(-left)}`}</span>`}${recipe.offer?`<span>${recipe.mode==='demo'?'示例优惠':'本账户券方案'}：${escape(recipe.offer)}</span>`:''}${recipe.discount>0?`<span>本次优惠 ¥${money(recipe.discount)}</span>`:''}</div></div>
       <div class="recipe-actions"><button type="button" class="text-button" data-action="edit" data-index="${index}">改一下搭配</button><div><button class="secondary-button" type="button" data-action="image" data-index="${index}">保存攻略图</button><button class="secondary-button share-button" type="button" data-action="share" data-index="${index}">分享这份作业</button></div></div>
     </article>`;
   }).join('');
@@ -198,11 +198,12 @@ function shareURL(recipe) {
   return `${location.origin}/#recipe=${encoded}`;
 }
 const localPreview = () => ['localhost','127.0.0.1','[::1]'].includes(location.hostname);
+const offerNote = recipe => recipe.mode==='demo' ? '示例优惠，仅供体验。' : '本账户可用券参与核价，朋友需确认自己也有适用券。';
 async function share(recipe) {
   try {
     if (!$('#budget').reportValidity()) return;
     const url = shareURL(recipe);
-    const text = [`麦麦抄作业｜${recipe.title}`,`${recipe.mode==='demo'?'示例金额':'本店核价'} ¥${money(recipe.total)} · ${recipe.store.name}`,...recipe.items.map(item=>`${item.name} × ${item.quantity}${item.selections?'\n每份选：'+item.selections.flatMap(group=>group.items.map(row=>`${row.name} × ${row.quantity}`)).join(' ＋ '):''}`),'朋友请按自己的门店重算，餐品和价格以当前核验为准。'].join('\n');
+    const text = [`麦麦抄作业｜${recipe.title}`,`${recipe.mode==='demo'?'示例金额':'本店核价'} ¥${money(recipe.total)} · ${recipe.store.name}`,...recipe.items.map(item=>`${item.name} × ${item.quantity}${item.selections?'\n每份选：'+item.selections.flatMap(group=>group.items.map(row=>`${row.name} × ${row.quantity}`)).join(' ＋ '):''}`),...(recipe.offer?[offerNote(recipe)]:[]),'朋友请按自己的门店重算，餐品和价格以当前核验为准。'].join('\n');
     if (navigator.share) await navigator.share({title:'麦麦抄作业',text,url});
     else if (navigator.clipboard) { await navigator.clipboard.writeText(`${text}\n${url}`); toast(localPreview()?'点法和本地链接已复制；部署网站后，朋友才能打开。':'点法和攻略链接已复制，发给朋友就能复用。'); }
     else { const area=document.createElement('textarea');area.value=`${text}\n${url}`;document.body.append(area);area.select();document.execCommand('copy');area.remove();toast('点法和攻略链接已复制。'); }
@@ -225,7 +226,10 @@ async function saveImage(recipe, button) {
     const canvas=document.createElement('canvas');canvas.width=1080;const ctx=canvas.getContext('2d');ctx.font=`24px ${font}`;
     const selectionLines=recipe.items.map(item=>item.selections?wrapText(ctx,'每份选：'+item.selections.flatMap(group=>group.items.map(row=>`${row.name} × ${row.quantity}`)).join(' ＋ '),600):[]);
     const rowHeights=selectionLines.map(lines=>Math.max(170,lines.length?160+lines.length*32:170));
-    const width=1080,height=920+rowHeights.reduce((a,b)=>a+b,0);canvas.height=height;
+    const note=[localPreview()?'当前二维码指向本机预览，朋友访问前需部署网站。':'餐品、优惠和金额以所选门店当前核验结果为准。',...(recipe.offer?[offerNote(recipe)]:[])].join(' ');
+    ctx.font=`22px ${font}`;const noteLines=wrapText(ctx,note,590);
+    const originTop=Math.max(260,170+noteLines.length*34+25);
+    const width=1080,height=490+rowHeights.reduce((a,b)=>a+b,0)+Math.max(430,originTop+100);canvas.height=height;
     ctx.fillStyle='#f6f7f8';ctx.fillRect(0,0,width,height);ctx.fillStyle='#ffffff';ctx.fillRect(55,45,970,height-90);
     ctx.fillStyle='#d9252a';ctx.fillRect(55,45,970,15);ctx.font=`bold 38px ${font}`;ctx.fillText('麦麦抄作业',100,125);
     ctx.fillStyle='#29241e';ctx.font=`bold 52px ${font}`;ctx.fillText(recipe.title,100,215);
@@ -244,9 +248,8 @@ async function saveImage(recipe, button) {
     const bottom=490+rowHeights.reduce((a,b)=>a+b,0);ctx.fillStyle='#ffc72c';ctx.fillRect(100,bottom+5,880,64);ctx.fillStyle='#29241e';ctx.font=`bold 28px ${font}`;ctx.fillText(localPreview()?'本地预览 · 部署网站后即可扫码复用':'扫码抄作业，按你自己的门店重新计价。',128,bottom+47);
     ctx.drawImage(qr,750,bottom+85,230,230);
     ctx.fillStyle='#716d67';ctx.font=`22px ${font}`;ctx.fillText(`核验时间：${new Date(recipe.checkedAt).toLocaleString('zh-CN',{hour12:false})}`,100,bottom+125);
-    const note=localPreview()?'当前二维码指向本机预览，朋友访问前需部署网站。':'餐品、优惠和金额以所选门店当前核验结果为准。';
-    wrapText(ctx,note,590).forEach((line,index)=>ctx.fillText(line,100,bottom+170+index*34));
-    ctx.font=`20px ${font}`;wrapText(ctx,location.origin,590).slice(0,2).forEach((line,index)=>ctx.fillText(line,100,bottom+260+index*28));
+    noteLines.forEach((line,index)=>ctx.fillText(line,100,bottom+170+index*34));
+    ctx.font=`20px ${font}`;wrapText(ctx,location.origin,590).slice(0,2).forEach((line,index)=>ctx.fillText(line,100,bottom+originTop+index*28));
     const blob=await new Promise((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(new Error('图片生成失败。')),'image/png'));
     const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=`麦麦抄作业-${recipe.title}.png`;link.click();setTimeout(()=>URL.revokeObjectURL(url),10000);toast(localPreview()?'攻略图已保存，二维码目前指向本地预览。':'带二维码的攻略图已保存，朋友扫码就能复用。');
   } catch { error('攻略图生成失败，请重试或分享攻略链接。'); }
