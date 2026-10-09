@@ -3,7 +3,22 @@ import assert from 'node:assert/strict';
 import { demoCatalog, demoQuote } from '../lib/demo.js';
 import { validateOptions, generateRecipes, resolveItems, toCents } from '../lib/recipes.js';
 import { encodeShare, decodeShare } from '../public/share.js';
-import { normalizePrice, normalizeMenu, quoteArguments, toolData, liveQuote, singleItemDetail } from '../lib/mcd.js';
+import { normalizePrice, normalizeMenu, quoteArguments, toolData, liveQuote, singleItemDetail, liveStores } from '../lib/mcd.js';
+import { foodItems } from '../lib/meals.js';
+
+test('保留官方布尔营业状态和时段，营业门店优先；未知状态不猜测',async()=>{
+  const stores=await liveStores({call:async()=>[
+    {storeCode:'2',storeName:'晚间关闭店',businessStatus:false,businessStartTime:'06:30',businessEndTime:'23:00'},
+    {storeCode:'1',storeName:'营业店',businessStatus:true,businessStartTime:'00:00',businessEndTime:'23:59'},
+    {storeCode:'3',storeName:'未知状态店',businessStatus:'unknown',businessStartTime:'invalid'}
+  ]},'上海','测试地标');
+  assert.equal(stores[0].code,'1');
+  assert.equal(stores[0].isOpen,true);
+  assert.equal(stores[0].hours,'00:00–23:59');
+  assert.equal(stores.at(-1).isOpen,false);
+  assert.equal(stores[1].isOpen,undefined);
+  assert.equal(stores[1].hours,undefined);
+});
 
 test('推荐保留必点餐品，且核价后不超过预算；无解时返回已核验的最低金额',async()=>{
   const catalog=demoCatalog();
@@ -12,8 +27,8 @@ test('推荐保留必点餐品，且核价后不超过预算；无解时返回�
   assert.ok(result.recipes.length>0);
   for(const recipe of result.recipes){
     assert.ok(recipe.total<=4000);
-    assert.ok(recipe.items.some(i=>i.name==='麦辣鸡腿汉堡'));
-    assert.ok(recipe.items.some(i=>i.name==='薯条'));
+    assert.ok(foodItems(recipe.items).some(i=>i.name==='麦辣鸡腿汉堡'));
+    assert.ok(foodItems(recipe.items).some(i=>i.name==='薯条'));
   }
   const impossible=await generateRecipes(catalog,{...options,budget:2000},items=>demoQuote(catalog,items));
   assert.equal(impossible.recipes.length,0);
@@ -21,6 +36,7 @@ test('推荐保留必点餐品，且核价后不超过预算；无解时返回�
 });
 test('按核价金额筛选：菜单估价超预算的组合也能因已核实优惠入选',async()=>{
   const catalog=demoCatalog();
+  catalog.products=catalog.products.filter(p=>p.kind!=='bundle');
   const options=validateOptions({budget:30,mustHave:['麦香鸡','薯条'],includeDrink:true,includeSide:true});
   const result=await generateRecipes(catalog,options,items=>demoQuote(catalog,items));
   assert.equal(result.recipes[0].total,2750);
@@ -63,10 +79,11 @@ test('真实商品详情保留规格名称和默认特制；需要套餐选件�
   assert.equal(singleItemDetail(product,{name:'可乐',rounds:[{id:1}]}),null);
   assert.throws(()=>singleItemDetail(product,{name:'饮料',modification:{items:[{minValues:1,values:[]}]}}),/默认选项/);
 });
-test('菜单排除售罄和需要选件的套餐；官方业务错误被保留',()=>{
+test('菜单排除售罄，套餐保留以便读取选件；官方业务错误被保留',()=>{
   const products=normalizeMenu({meals:{a:{name:'麦香鸡',currentPrice:'19'},b:{name:'麦香鱼',currentPrice:24,soldOut:true},c:{name:'麦香鸡套餐',currentPrice:30}}});
-  assert.equal(products.length,1);
+  assert.equal(products.length,2);
   assert.equal(products[0].price,1900);
+  assert.equal(products[1].kind,'bundle');
   assert.throws(()=>toolData({structuredContent:{code:400,message:'门店已关闭'}}),/门店已关闭/);
 });
 test('计价参数按真实 schema 构造；未知必填字段不凭空补齐',()=>{

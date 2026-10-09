@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: mcd-copy-meal
+    runtime: node
+    plan: free
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /api/status
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: MCD_MCP_TOKEN
+        value: ""

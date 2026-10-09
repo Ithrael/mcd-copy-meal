@@ -6,11 +6,11 @@ const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp
 const state = { mode:'demo', token:'', hasServerToken:false, store:null, catalog:null, recipes:[], mustHave:[], shared:null, editItems:[], busy:false };
 let toastTimer;
 function toast(message) { $('#toast').textContent = message; $('#toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { $('#toast').hidden = true; }, 4200); }
-function error(message = '') { $('#error-message').textContent = message; $('#error-message').hidden = !message; }
+function error(message = '', budgetRelated = false) { $('#error-message').textContent = message; $('#error-message').hidden = !message; $('#error-message').dataset.budgetRelated=String(budgetRelated); }
 function busy(active, message = '正在核验菜单与价格…') {
   state.busy = active;
   $('.results').setAttribute('aria-busy',String(active));
-  for (const node of document.querySelectorAll('#recipe-form button, #recipe-form input, #store-button, #connection-button, .recipe-actions button')) node.disabled = active;
+  for (const node of document.querySelectorAll('#recipe-form button, #recipe-form input, #recipe-form select, #store-button, #connection-button, .recipe-actions button')) node.disabled = active;
   $('#generate-button').textContent = active ? message : '帮我搭一份';
 }
 async function api(path, body) {
@@ -29,8 +29,13 @@ function renderControls() {
   $('#connection-button').textContent = state.mode === 'demo' ? '连接麦当劳' : '连接设置';
   $('#selected-store').innerHTML = `<span class="store-symbol" aria-hidden="true">⌖</span><span><strong>${escape(state.store?.name || '先选一家门店')}</strong><small>${escape(state.store?.address || '搜索城市和门店')}</small></span><span aria-hidden="true">⌄</span>`;
   $('#source-note').textContent = state.mode === 'demo' ? '演示菜单与示例金额。连接麦当劳账户后，可读取当前门店菜单并核验价格。' : (catalog?.source || '选定门店后，读取当前在售菜单。');
-  const names = [...new Set([...(catalog?.products.filter(p=>p.kind !== 'drink').slice(0,8).map(p=>p.name) || []),...state.mustHave])];
-  $('#must-have').innerHTML = names.map(name => `<button class="choice-chip" type="button" data-name="${escape(name)}" aria-pressed="${state.mustHave.includes(name)}">${escape(name)}${catalog && !catalog.products.some(p=>p.name===name) ? '（当前未售）' : ''}</button>`).join('');
+  const foods = catalog?.products.flatMap(p=>[...(p.kind!=='bundle'?[p]:[]),...(p.rounds || []).flatMap(r=>r.choices)]) || [];
+  const availableNames = new Set(foods.map(p=>p.name));
+  const preferred = ['main','side'].flatMap(kind=>[...new Set(foods.filter(p=>p.kind===kind).map(p=>p.name))].slice(0,4));
+  const names = [...new Set([...preferred,...state.mustHave])];
+  $('#must-have').innerHTML = names.map(name => `<button class="choice-chip" type="button" data-name="${escape(name)}" aria-pressed="${state.mustHave.includes(name)}">${escape(name)}${catalog && !availableNames.has(name) ? '（当前未售）' : ''}</button>`).join('');
+  $('#more-food').innerHTML = '<option value="">其他餐品…</option>'+[...availableNames].filter(name=>!names.includes(name)).map(name=>`<option value="${escape(name)}">${escape(name)}</option>`).join('');
+  $('#more-food').hidden = !$('#more-food').options[1];
 }
 function renderRecipes(recipes, info = {}) {
   state.recipes = recipes;
@@ -41,18 +46,20 @@ function renderRecipes(recipes, info = {}) {
     if (info.lowestChecked != null) description = `当前核验过的搭配最低 ¥${money(info.lowestChecked)}。你可以调整预算或搭配条件。`;
     if (info.shared) description = '先选好自己的门店，再核验朋友这份搭配。';
     if (info.chooseStore) description = '搜索城市和地址，选择你准备取餐的门店。';
-    $('#recipe-results').innerHTML = `<div class="empty-state"><h3>${info.shared?'朋友的攻略，等你来抄':info.chooseStore?'先选一家店':'这个预算暂时没有合适搭配'}</h3><p>${escape(description)}</p>${info.lowestChecked ? `<button type="button" class="secondary-button" data-new-budget="${Math.ceil(info.lowestChecked/100)}">预算调到 ${Math.ceil(info.lowestChecked/100)} 元</button>` : ''}</div>`;
+    if (info.storeUnavailable) description = '门店营业时段或服务状态可能影响菜单。请稍后再试，或换一家营业中的门店。';
+    $('#recipe-results').innerHTML = `<div class="empty-state"><h3>${info.storeUnavailable?'暂时无法读取这家店':info.shared?'朋友的攻略，等你来抄':info.chooseStore?'先选一家店':'这个预算暂时没有合适搭配'}</h3><p>${escape(description)}</p>${info.lowestChecked ? `<button type="button" class="secondary-button" data-new-budget="${Math.ceil(info.lowestChecked/100)}">预算调到 ${Math.ceil(info.lowestChecked/100)} 元</button>` : info.storeUnavailable?'<button type="button" class="secondary-button" data-change-store>换一家门店</button>':''}</div>`;
     return;
   }
   const budget = Number($('#budget').value) * 100;
   $('#recipe-results').innerHTML = recipes.map((recipe, index) => {
-    const left = Math.round(budget - recipe.total);
-    const meta = recipe.mode === 'demo' ? '示例金额 · 未实时核验' : '官方实时核价';
+    const left = budget >= 100 && budget <= 50000 ? Math.round(budget - recipe.total) : null;
+    const meta = recipe.mode === 'demo' ? '示例金额 · 未实时核验' : `官方核价 · ${new Date(recipe.checkedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',hour12:false})}`;
     return `<article class="recipe-card ${index===0?'recommended':''}">
-      <div class="recipe-topline"><span class="recipe-label">${left<0?'这份搭配超出预算':index===0?'优先看看这份':index===1?'换个口味':'另一份搭配'}</span><span class="recipe-meta">${meta}</span></div>
+      <div class="recipe-topline"><span class="recipe-label">${left!==null&&left<0?'这份搭配超出预算':index===0?'优先看看这份':index===1?'换个口味':'另一份搭配'}</span><span class="recipe-meta">${meta}</span></div>
       <div class="recipe-body"><div class="recipe-title"><h3>${escape(recipe.title)}</h3><span class="price"><small>¥</small>${money(recipe.total)}</span></div>
       <div class="food-lineup">${recipe.items.map(item=>`<div class="food-tile">${item.image?`<img src="${escape(item.image)}" alt="${escape(item.name)}" width="78" height="78">`:''}<div><strong>${escape(item.name)}</strong><small>× ${item.quantity}</small></div></div>`).join('')}</div>
-      <div class="recipe-explanation"><span class="${left>=0?'budget-left':'missing-items'}">${left>=0?`预算还剩 ¥${money(left)}`:`超出预算 ¥${money(-left)}`}</span>${recipe.offer?`<span>${escape(recipe.offer)}</span>`:''}${recipe.discount>0?`<span>本次优惠 ¥${money(recipe.discount)}</span>`:''}</div></div>
+      ${recipe.items.some(item=>item.selections)?`<div class="order-breakdown">${recipe.items.filter(item=>item.selections).map(item=>`<div><strong>${escape(item.name)}：每份选</strong><span>${item.selections.flatMap(group=>group.items.map(row=>`${escape(row.name)} × ${row.quantity}`)).join(' ＋ ')}</span></div>`).join('')}</div>`:''}
+      <div class="recipe-explanation">${left===null?'':`<span class="${left>=0?'budget-left':'missing-items'}">${left>=0?`预算还剩 ¥${money(left)}`:`超出预算 ¥${money(-left)}`}</span>`}${recipe.offer?`<span>${escape(recipe.offer)}</span>`:''}${recipe.discount>0?`<span>本次优惠 ¥${money(recipe.discount)}</span>`:''}</div></div>
       <div class="recipe-actions"><button type="button" class="text-button" data-action="edit" data-index="${index}">改一下搭配</button><div><button class="secondary-button" type="button" data-action="image" data-index="${index}">保存攻略图</button><button class="secondary-button share-button" type="button" data-action="share" data-index="${index}">分享这份作业</button></div></div>
     </article>`;
   }).join('');
@@ -76,7 +83,7 @@ async function loadCatalog(store) {
   state.store = store; error(); busy(true,'正在读取门店菜单…'); renderControls();
   try {
     state.catalog = await api('/api/catalog',{store}); renderControls();
-  } catch (failure) { state.catalog = null; state.recipes = []; renderRecipes([], {chooseStore:true}); error(failure.message); }
+  } catch (failure) { state.catalog = null; state.recipes = []; renderControls(); renderRecipes([], {storeUnavailable:true}); error(failure.message); }
   finally { busy(false); }
   if (state.catalog) {
     if (state.shared) renderRecipes([],{shared:true});
@@ -84,7 +91,7 @@ async function loadCatalog(store) {
   }
 }
 function renderStores(stores) {
-  $('#store-list').innerHTML = stores.length ? stores.map((store,index)=>`<button type="button" class="store-option" data-store-index="${index}"><strong>${escape(store.name)}</strong><small>${escape(store.address)}</small></button>`).join('') : '<p class="dialog-note">没有找到可用门店，试试附近的地标或另一条地址。</p>';
+  $('#store-list').innerHTML = stores.length ? stores.map((store,index)=>`<button type="button" class="store-option" data-store-index="${index}" ${store.isOpen===false?'disabled':''}><strong>${escape(store.name)}</strong><small>${escape(store.address)}</small>${store.hours||store.isOpen!==undefined?`<small>${store.isOpen===false?'当前未营业':store.isOpen===true?'营业中':''}${store.hours?' · '+escape(store.hours):''}</small>`:''}</button>`).join('') : '<p class="dialog-note">没有找到可用门店，试试附近的地标或另一条地址。</p>';
   $('#store-list').onclick = event => {
     const button = event.target.closest('[data-store-index]');
     if (!button) return;
@@ -98,7 +105,7 @@ async function searchStores() {
   try {
     const result = await api(`/api/stores?city=${encodeURIComponent($('#search-city').value.trim())}&keyword=${encodeURIComponent($('#search-keyword').value.trim())}`);
     renderStores(result.stores);
-    $('#store-search-note').textContent = result.mode === 'demo' ? '下面是两家虚拟演示门店。切换门店后，示例价格会变化。' : '选择你准备到店取餐的门店。';
+    $('#store-search-note').textContent = result.mode === 'demo' ? '下面是两家虚拟演示门店。切换门店后，示例价格会变化。' : result.stores.length && result.stores.every(store=>store.isOpen===false)?'查到的门店暂未营业，试试附近其他地标。':'选择你准备到店取餐的门店。';
   } catch (failure) { $('#store-search-note').textContent = failure.message; renderStores([]); }
   finally { submit.disabled = false; }
 }
@@ -116,7 +123,7 @@ function readShared() {
     state.shared = decodeShare(encoded); $('#budget').value = state.shared.budget/100;
     document.title = `${state.shared.title} · 麦麦抄作业`;
     $('#shared-banner').hidden = false;
-    $('#shared-banner').innerHTML = `<div><strong>朋友分享的作业：${escape(state.shared.title)}</strong><p>${state.shared.items.map(i=>`${escape(i.name)} × ${i.quantity}`).join(' ＋ ')}<br>按你自己的门店重新计价，再决定怎么点。</p></div><div><button id="reprice-shared" class="primary-button" type="button">按我的门店重算</button><button id="edit-shared" class="text-button" type="button">手动替换餐品</button></div>`;
+    $('#shared-banner').innerHTML = `<div><strong>朋友分享的作业：${escape(state.shared.title)}</strong><p>${state.shared.items.map(i=>`${escape(i.name)} × ${i.quantity}${i.selections?`<br>每份选：${i.selections.flatMap(group=>group.items.map(row=>`${escape(row.name)} × ${row.quantity}`)).join(' ＋ ')}`:''}`).join('<br>')}<br>按你自己的门店重新计价，再决定怎么点。</p></div><div><button id="reprice-shared" class="primary-button" type="button">按我的门店重算</button><button id="edit-shared" class="text-button" type="button">手动替换餐品</button></div>`;
     $('#reprice-shared').onclick = repriceShared;
     $('#edit-shared').onclick = () => { if(!state.busy) openEdit(state.shared.items); };
   } catch (failure) { error(failure.message); $('#shared-banner').hidden = true; state.shared = null; }
@@ -129,47 +136,76 @@ async function repriceShared() {
     const result = await api('/api/reprice',{store:state.store,budget:$('#budget').value,items:state.shared.items});
     state.catalog = result.catalog; renderControls(); renderRecipes([result.recipe]);
     if (result.warnings?.length) $('#source-note').textContent += ' ' + result.warnings.join(' ');
-    if (result.overBudget) error(`换到这家店后，金额超出预算 ¥${money(result.recipe.total-result.budget)}。可以修改搭配或调整预算。`);
+    if (result.overBudget) error(`换到这家店后，金额超出预算 ¥${money(result.recipe.total-result.budget)}。可以修改搭配或调整预算。`,true);
     else toast('已按你选的门店重新计价。');
   } catch (failure) { error(failure.message); }
   finally { busy(false); }
 }
 function openEdit(items) {
   if (!state.catalog) { toast('请先选好门店并读取菜单。'); return; }
-  state.editItems = items.map(i=>({name:i.name,quantity:i.quantity}));
+  state.editItems = items.map(i=>({name:i.name,quantity:i.quantity,...(i.selections?{selections:structuredClone(i.selections)}:{})}));
   $('#edit-error').hidden = true;
   $('#edit-items').innerHTML = state.editItems.map((item,index)=>{
     const product = state.catalog.products.find(p=>p.name===item.name);
     const pool = product ? state.catalog.products.filter(p=>p.kind===product.kind) : state.catalog.products;
-    return `<div class="edit-item"><label>餐品 ${index+1}<select data-edit-name="${index}" required>${!product?`<option value="" selected disabled>${escape(item.name)}（当前未售）</option>`:''}${pool.map(p=>`<option value="${escape(p.name)}" ${p.name===item.name?'selected':''}>${escape(p.name)}</option>`).join('')}</select></label><label>份数<input type="number" min="1" max="8" step="1" value="${item.quantity}" data-edit-quantity="${index}" required></label></div>`;
+    return `<div class="edit-block"><div class="edit-item"><label>餐品 ${index+1}<select data-edit-name="${index}" required>${!product?`<option value="" selected disabled>${escape(item.name)}（当前未售）</option>`:''}${pool.map(p=>`<option value="${escape(p.name)}" ${p.name===item.name?'selected':''}>${escape(p.name)}</option>`).join('')}</select></label><label>份数<input type="number" min="1" max="8" step="1" value="${item.quantity}" data-edit-quantity="${index}" required></label></div><div class="edit-groups" data-edit-groups="${index}"></div></div>`;
   }).join('');
+  state.editItems.forEach((_,index)=>renderEditGroups(index));
   $('#edit-dialog').showModal();
 }
+function renderEditGroups(index) {
+  const item = state.editItems[index];
+  const product = state.catalog.products.find(p=>p.name===$(`[data-edit-name="${index}"]`).value);
+  $(`[data-edit-groups="${index}"]`).innerHTML = (product?.rounds || []).map((round,roundIndex)=>{
+    const old = item.selections?.[roundIndex];
+    const chosen = old?.name===round.name ? old.items.flatMap(row=>Array(row.quantity).fill(row.name)) : item.selections?[]:round.choices.flatMap(choice=>Array(choice.defaultQuantity || 0).fill(choice.name));
+    return `<fieldset><legend>${escape(round.name)} · 每份选 ${round.min===round.max?round.min:`${round.min}～${round.max}`} 项</legend>${Array.from({length:round.max},(_,slot)=>{
+      const current = chosen[slot] || '';
+      const missing = current && !round.choices.some(choice=>choice.name===current);
+      return `<label><span class="sr-only">${escape(round.name)}第 ${slot+1} 项</span><select data-edit-parent="${index}" data-edit-round="${roundIndex}" ${slot<round.min?'required':''}><option value="" ${!current?'selected':''}>${slot<round.min?'请选择餐品':'不加这一项'}</option>${missing?`<option value="" selected disabled>${escape(current)}（当前未售）</option>`:''}${round.choices.map(choice=>`<option value="${escape(choice.name)}" ${choice.name===current?'selected':''}>${escape(choice.name)}${choice.extraCents?`（${choice.extraCents>0?'+':'−'}¥${money(Math.abs(choice.extraCents))} 菜单加价）`:''}</option>`).join('')}</select></label>`;
+    }).join('')}</fieldset>`;
+  }).join('');
+}
+$('#edit-items').onchange=event=>{
+  const select=event.target.closest('[data-edit-name]');
+  if(!select)return;
+  const index=Number(select.dataset.editName);state.editItems[index]={name:select.value,quantity:state.editItems[index].quantity};renderEditGroups(index);
+};
 async function submitEdit() {
-  const items = state.editItems.map((item,index)=>({name:$(`[data-edit-name="${index}"]`).value,quantity:Number($(`[data-edit-quantity="${index}"]`).value)}));
+  const items = state.editItems.map((item,index)=>{
+    const name=$(`[data-edit-name="${index}"]`).value;
+    const product=state.catalog.products.find(p=>p.name===name);
+    const selections=(product?.rounds || []).map((round,roundIndex)=>{
+      const quantities=new Map();
+      for(const select of document.querySelectorAll(`[data-edit-parent="${index}"][data-edit-round="${roundIndex}"]`))if(select.value)quantities.set(select.value,(quantities.get(select.value)||0)+1);
+      return {name:round.name,items:[...quantities].map(([name,quantity])=>({name,quantity}))};
+    });
+    return {name,quantity:Number($(`[data-edit-quantity="${index}"]`).value),...(selections.length?{selections}:{})};
+  });
   $('#edit-submit').disabled = true; $('#edit-error').hidden = true;
   try {
     const result = await api('/api/reprice',{store:state.store,budget:$('#budget').value,items});
     state.catalog = result.catalog; renderControls(); renderRecipes([result.recipe]);
     if (result.warnings?.length) $('#source-note').textContent += ' ' + result.warnings.join(' ');
     $('#edit-dialog').close(); error();
-    if (result.overBudget) error(`修改后超出预算 ¥${money(result.recipe.total-result.budget)}，请再调整搭配或预算。`);
+    if (result.overBudget) error(`修改后超出预算 ¥${money(result.recipe.total-result.budget)}，请再调整搭配或预算。`,true);
     else toast('搭配已修改，金额已重新计算。');
   } catch (failure) { $('#edit-error').textContent = failure.message; $('#edit-error').hidden = false; }
   finally { $('#edit-submit').disabled = false; }
 }
 function shareURL(recipe) {
-  const encoded = encodeShare({v:1,title:recipe.title,budget:Math.round(Number($('#budget').value)*100),items:recipe.items});
+  const encoded = encodeShare({v:2,title:recipe.title,budget:Math.round(Number($('#budget').value)*100),items:recipe.items});
   return `${location.origin}/#recipe=${encoded}`;
 }
 const localPreview = () => ['localhost','127.0.0.1','[::1]'].includes(location.hostname);
 async function share(recipe) {
-  const url = shareURL(recipe);
-  const text = `${recipe.title}，按自己的门店重算后就能照着点。`;
   try {
+    if (!$('#budget').reportValidity()) return;
+    const url = shareURL(recipe);
+    const text = [`麦麦抄作业｜${recipe.title}`,`${recipe.mode==='demo'?'示例金额':'本店核价'} ¥${money(recipe.total)} · ${recipe.store.name}`,...recipe.items.map(item=>`${item.name} × ${item.quantity}${item.selections?'\n每份选：'+item.selections.flatMap(group=>group.items.map(row=>`${row.name} × ${row.quantity}`)).join(' ＋ '):''}`),'朋友请按自己的门店重算，餐品和价格以当前核验为准。'].join('\n');
     if (navigator.share) await navigator.share({title:'麦麦抄作业',text,url});
-    else if (navigator.clipboard) { await navigator.clipboard.writeText(url); toast(localPreview()?'本地预览链接已复制；部署网站后，朋友才能打开。':'攻略链接已复制，发给朋友就能复用。'); }
-    else { const area=document.createElement('textarea');area.value=url;document.body.append(area);area.select();document.execCommand('copy');area.remove();toast('攻略链接已复制。'); }
+    else if (navigator.clipboard) { await navigator.clipboard.writeText(`${text}\n${url}`); toast(localPreview()?'点法和本地链接已复制；部署网站后，朋友才能打开。':'点法和攻略链接已复制，发给朋友就能复用。'); }
+    else { const area=document.createElement('textarea');area.value=`${text}\n${url}`;document.body.append(area);area.select();document.execCommand('copy');area.remove();toast('点法和攻略链接已复制。'); }
   } catch (failure) { if (failure.name !== 'AbortError') { error('分享失败，请重试；也可以先保存攻略图。'); } }
 }
 function loadImage(src) {
@@ -182,11 +218,14 @@ function wrapText(ctx, text, width) {
   if(current)lines.push(current);return lines;
 }
 async function saveImage(recipe, button) {
+  if (!$('#budget').reportValidity()) return;
   button.disabled=true;button.textContent='正在生成';
   try {
-    const width=1080,height=920+recipe.items.length*170;
-    const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;const ctx=canvas.getContext('2d');
     const font='"PingFang SC", "Microsoft YaHei", sans-serif';
+    const canvas=document.createElement('canvas');canvas.width=1080;const ctx=canvas.getContext('2d');ctx.font=`24px ${font}`;
+    const selectionLines=recipe.items.map(item=>item.selections?wrapText(ctx,'每份选：'+item.selections.flatMap(group=>group.items.map(row=>`${row.name} × ${row.quantity}`)).join(' ＋ '),600):[]);
+    const rowHeights=selectionLines.map(lines=>Math.max(170,lines.length?160+lines.length*32:170));
+    const width=1080,height=920+rowHeights.reduce((a,b)=>a+b,0);canvas.height=height;
     ctx.fillStyle='#f6f7f8';ctx.fillRect(0,0,width,height);ctx.fillStyle='#ffffff';ctx.fillRect(55,45,970,height-90);
     ctx.fillStyle='#d9252a';ctx.fillRect(55,45,970,15);ctx.font=`bold 38px ${font}`;ctx.fillText('麦麦抄作业',100,125);
     ctx.fillStyle='#29241e';ctx.font=`bold 52px ${font}`;ctx.fillText(recipe.title,100,215);
@@ -196,12 +235,13 @@ async function saveImage(recipe, button) {
     const [images,qr]=await Promise.all([Promise.all(recipe.items.map(item=>item.image?loadImage(item.image):null)),loadImage(`/api/qr?url=${encodeURIComponent(shareURL(recipe))}`)]);
     if(!qr)throw new Error('二维码生成失败。');
     recipe.items.forEach((item,index)=>{
-      const top=490+index*170;ctx.strokeStyle='#e5e7eb';ctx.beginPath();ctx.moveTo(100,top);ctx.lineTo(980,top);ctx.stroke();
+      const top=490+rowHeights.slice(0,index).reduce((a,b)=>a+b,0);ctx.strokeStyle='#e5e7eb';ctx.beginPath();ctx.moveTo(100,top);ctx.lineTo(980,top);ctx.stroke();
       if(images[index])ctx.drawImage(images[index],100,top+15,130,130);
       ctx.fillStyle='#29241e';ctx.font=`bold 31px ${font}`;wrapText(ctx,item.name,570).slice(0,2).forEach((line,i)=>ctx.fillText(line,255,top+65+i*38));
       ctx.fillStyle='#716d67';ctx.font=`28px ${font}`;ctx.fillText(`× ${item.quantity}`,875,top+76);
+      if(item.selections){ctx.font=`24px ${font}`;selectionLines[index].forEach((line,i)=>ctx.fillText(line,255,top+130+i*32));}
     });
-    const bottom=490+recipe.items.length*170;ctx.fillStyle='#ffc72c';ctx.fillRect(100,bottom+5,880,64);ctx.fillStyle='#29241e';ctx.font=`bold 28px ${font}`;ctx.fillText(localPreview()?'本地预览 · 部署网站后即可扫码复用':'扫码抄作业，按你自己的门店重新计价。',128,bottom+47);
+    const bottom=490+rowHeights.reduce((a,b)=>a+b,0);ctx.fillStyle='#ffc72c';ctx.fillRect(100,bottom+5,880,64);ctx.fillStyle='#29241e';ctx.font=`bold 28px ${font}`;ctx.fillText(localPreview()?'本地预览 · 部署网站后即可扫码复用':'扫码抄作业，按你自己的门店重新计价。',128,bottom+47);
     ctx.drawImage(qr,750,bottom+85,230,230);
     ctx.fillStyle='#716d67';ctx.font=`22px ${font}`;ctx.fillText(`核验时间：${new Date(recipe.checkedAt).toLocaleString('zh-CN',{hour12:false})}`,100,bottom+125);
     const note=localPreview()?'当前二维码指向本机预览，朋友访问前需部署网站。':'餐品、优惠和金额以所选门店当前核验结果为准。';
@@ -214,13 +254,17 @@ async function saveImage(recipe, button) {
 }
 
 $('#recipe-form').onsubmit=event=>{event.preventDefault();generate();};
-$('#must-have').onclick=event=>{const button=event.target.closest('[data-name]');if(!button||state.busy)return;const name=button.dataset.name;if(state.mustHave.includes(name))state.mustHave=state.mustHave.filter(n=>n!==name);else if(state.mustHave.length<5)state.mustHave.push(name);else{toast('最多选择 5 种必点餐品。');return;}renderControls();};
-$('.budget-presets').onclick=event=>{const button=event.target.closest('[data-budget]');if(!button)return;$('#budget').value=button.dataset.budget;updatePreset();};
+function toggleMustHave(name){if(state.busy)return;if(state.mustHave.includes(name))state.mustHave=state.mustHave.filter(n=>n!==name);else if(state.mustHave.length<5)state.mustHave.push(name);else{toast('最多选择 5 种必点餐品。');return;}renderControls();}
+$('#must-have').onclick=event=>{const button=event.target.closest('[data-name]');if(button)toggleMustHave(button.dataset.name);};
+$('#more-food').onchange=event=>{if(event.target.value)toggleMustHave(event.target.value);};
+$('.budget-presets').onclick=event=>{const button=event.target.closest('[data-budget]');if(!button)return;$('#budget').value=button.dataset.budget;budgetChanged();};
 function updatePreset(){document.querySelectorAll('[data-budget]').forEach(b=>b.classList.toggle('active',Number(b.dataset.budget)===Number($('#budget').value)));}
-$('#budget').oninput=updatePreset;
+function budgetChanged(){updatePreset();if(state.recipes.length)renderRecipes(state.recipes);if($('#error-message').dataset.budgetRelated==='true')error();}
+$('#budget').oninput=budgetChanged;
 $('#store-button').onclick=openStores;$('#selected-store').onclick=openStores;
 $('#store-search-form').onsubmit=event=>{event.preventDefault();searchStores();};
 $('.recipe-results').onclick=event=>{
+  if(event.target.closest('[data-change-store]')){openStores();return;}
   const budgetButton=event.target.closest('[data-new-budget]');if(budgetButton){$('#budget').value=budgetButton.dataset.newBudget;updatePreset();generate();return;}
   const button=event.target.closest('[data-action]');if(!button||state.busy)return;const recipe=state.recipes[Number(button.dataset.index)];
   if(button.dataset.action==='edit')openEdit(recipe.items);if(button.dataset.action==='share')share(recipe);if(button.dataset.action==='image')saveImage(recipe,button);

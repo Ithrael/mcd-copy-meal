@@ -69,15 +69,16 @@ export const server = http.createServer(async (request,response) => {
       if (origin && new URL(origin).host !== request.headers.host) return json(response,403,{error:'请求来源不匹配，请在当前页面重试。'});
       const input = await body(request);
       const store = selectedStore(input.store);
+      const generationOptions = url.pathname==='/api/generate' ? validateOptions(input) : null;
+      const budget = url.pathname==='/api/reprice' ? toCents(input.budget) : null;
+      if (budget!=null && (budget<100||budget>50000)) throw new Error('预算请设置在 1～500 元之间。');
       const run = async mcd => {
         const catalog = mcd ? await liveCatalog(mcd,store) : demoCatalog(store.code);
         if (url.pathname === '/api/catalog') return catalog;
         const quote = mcd ? liveQuote(mcd,catalog) : items => demoQuote(catalog,items);
-        if (url.pathname === '/api/generate') return {...await generateRecipes(catalog,validateOptions(input),quote),catalog,warnings:[...(quote.warnings || [])]};
+        if (url.pathname === '/api/generate') return {...await generateRecipes(catalog,generationOptions,quote),catalog,warnings:[...(quote.warnings || [])]};
         const items = resolveItems(catalog.products,input.items);
         const recipe = checkedRecipe(catalog,items,await quote(items));
-        const budget = toCents(input.budget);
-        if (budget < 100 || budget > 50000) throw new Error('预算请设置在 1～500 元之间。');
         return {recipe,catalog,overBudget:recipe.total > budget,budget,warnings:[...(quote.warnings || [])]};
       };
       return json(response,200,token ? await withMcd(token,run) : await run(null));

@@ -1,0 +1,412 @@
+{
+  "source": "https://mcp.mcd.cn · query-meals/query-meal-detail",
+  "note": "真实餐品字段节选，仅用于测试；不是当前价格承诺。",
+  "samples": [
+    {
+      "capturedAt": "2026-10-09T15:23:18.320Z",
+      "storeCode": "1450713",
+      "menu": {
+        "code": "9900013304",
+        "name": "人气经典随心配",
+        "currentPrice": "13.9",
+        "image": "https://menu-img.mcd.cn/pcm/prod/menu/ProductPool/product/MS_9900013304_320.png"
+      },
+      "detail": {
+        "code": "9900013304",
+        "name": "人气经典随心配",
+        "rounds": [
+          {
+            "id": 1,
+            "name": "蓝区",
+            "quantity": 1,
+            "maxQuantity": 1,
+            "minQuantity": 1,
+            "choices": [
+              {
+                "code": "1450",
+                "name": "麦香鸡",
+                "quantity": 0,
+                "maxQuantity": -1,
+                "isDefault": 0,
+                "diffPrice": "+ ¥0",
+                "supportModify": true,
+                "modification": {
+                  "items": [
+                    {
+                      "maxValues": 2,
+                      "minValues": 0,
+                      "values": [
+                        {
+                          "code": "100136",
+                          "price": 0,
+                          "name": "麦香鸡酱",
+                          "maxQuantity": 1,
+                          "minQuantity": 0,
+                          "selectedQuantity": 1,
+                          "selectedKey": "0-1",
+                          "unselectedKey": "0-0"
+                        },
+                        {
+                          "code": "100168",
+                          "price": 0,
+                          "name": "生菜",
+                          "maxQuantity": 1,
+                          "minQuantity": 0,
+                          "selectedQuantity": 1,
+                          "selectedKey": "0-1",
+                          "unselectedKey": "0-0"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "name": "粉区",
+            "quantity": 1,
+            "maxQuantity": 1,
+            "minQuantity": 1,
+            "choices": [
+              {
+                "code": "3050",
+                "name": "可乐中杯",
+                "quantity": 0,
+                "maxQuantity": -1,
+                "isDefault": 0,
+                "diffPrice": "+ ¥0",
+                "supportModify": true,
+                "modification": {
+                  "items": [
+                    {
+                      "maxValues": 1,
+                      "minValues": 1,
+                      "values": [
+                        {
+                          "code": "200002",
+                          "price": 0,
+                          "name": "标准",
+                          "maxQuantity": 1,
+                          "minQuantity": 0,
+                          "selectedQuantity": 1,
+                          "selectedKey": "0-1"
+                        },
+                        {
+                          "code": "200002",
+                          "price": 0,
+                          "name": "去冰",
+                          "maxQuantity": 1,
+                          "minQuantity": 0,
+                          "selectedQuantity": 0,
+                          "selectedKey": "0-0"
+                        },
+                        {
+                          "code": "200002",
+                          "price": 0,
+                          "name": "多冰",
+                          "maxQuantity": 1,
+                          "minQuantity": 0,
+                          "selectedQuantity": 0,
+                          "selectedKey": "0-2"
+                        },
+                        {
+                          "code": "200002",
+                          "price": 0,
+                          "name": "少冰",
+                          "maxQuantity": 1,
+                          "minQuantity": 0,
+                          "selectedQuantity": 0,
+                          "selectedKey": "1-1"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "code": "4437",
+                "name": "小杯玉米杯",
+                "quantity": 0,
+                "maxQuantity": -1,
+                "isDefault": 0,
+                "diffPrice": "+ ¥0",
+                "supportModify": false
+              },
+              {
+                "code": "3071",
+                "name": "无糖可口可乐中杯",
+                "quantity": 0,
+                "maxQuantity": -1,
+                "isDefault": 0,
+                "diffPrice": "+ ¥0",
+                "supportModify": true,
+                "modification": {
+                  "items": [
+                    {
+                      "maxValues": 1,
+                      "minValues": 1,
+                      "values": [
+                        {
+                          "code": "200002",
+                          "price": 0,
+                          "name": "标准",
+                          "maxQuantity": 1,
+                          "minQuantity": 0,
+                          "selectedQuantity": 1,
+                          "selectedKey": "0-1"
+                        },
+                        {
+                          "code": "200002",
+                          "price": 0,
+                          "name": "去冰",
+                          "maxQuantity": 1,
+                          "minQuantity": 0,
+                          "selectedQuantity": 0,
+                          "selectedKey": "0-0"
+                        },
+                        {
+                          "code": "200002",
+                          "price": 0,
+                          "name": "多冰",
+                          "maxQuantity": 1,
+                          "minQuantity": 0,
+                          "selectedQuantity": 0,
+                          "selectedKey": "0-2"
+                        },
+                        {
+                          "code": "200002",
+                          "price": 0,
+                          "name": "少冰",
+                          "maxQuantity": 1,
+                          "minQuantity": 0,
+                          "selectedQuantity": 0,
+                          "selectedKey": "1-1"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "image": "https://menu-img.mcd.cn/pcm/prod/menu/ProductPool/product/MS_9900013304_600.png",
+        "supportModify": false
+      }
+    },
+    {
+      "capturedAt": "2026-10-09T15:23:18.531Z",
+      "storeCode": "1450713",
+      "menu": {
+        "code": "9900005453",
+        "name": "麦香鸡套餐",
+        "currentPrice": "28",
+        "image": "https://menu-img.mcd.cn/pcm/prod/menu/20260824/product/MS_G504967_320.png"
+      },
+      "detail": {
+        "code": "9900005453",
+        "name": "麦香鸡中套餐",
+        "rounds": [
+          {
+            "id": 1,
+            "name": "麦香鸡",
+            "quantity": 1,
+            "maxQuantity": 1,
+            "minQuantity": 1,
+            "choices": [
+              {
+                "code": "1450",
+                "name": "麦香鸡",
+                "quantity": 1,
+                "maxQuantity": -1,
+                "isDefault": 1,
+                "diffPrice": "+ ¥0",
+                "supportModify": true,
+                "modification": {
+                  "items": [
+                    {
+                      "maxValues": 2,
+                      "minValues": 0,
+                      "values": [
+                        {
+                          "code": "100136",
+                          "price": 0,
+                          "name": "麦香鸡酱",
+                          "maxQuantity": 1,
+                          "minQuantity": 0,
+                          "selectedQuantity": 1,
+                          "selectedKey": "0-1",
+                          "unselectedKey": "0-0"
+                        },
+                        {
+                          "code": "100168",
+                          "price": 0,
+                          "name": "生菜",
+                          "maxQuantity": 1,
+                          "minQuantity": 0,
+                          "selectedQuantity": 1,
+                          "selectedKey": "0-1",
+                          "unselectedKey": "0-0"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "name": "选择套餐内小食",
+            "quantity": 1,
+            "maxQuantity": 1,
+            "minQuantity": 1,
+            "choices": [
+              {
+                "code": "4810",
+                "name": "中薯条",
+                "quantity": 1,
+                "maxQuantity": -1,
+                "isDefault": 1,
+                "diffPrice": "+ ¥0",
+                "supportModify": false
+              },
+              {
+                "code": "4437",
+                "name": "小杯玉米杯",
+                "quantity": 0,
+                "maxQuantity": -1,
+                "isDefault": 0,
+                "diffPrice": "- ¥0.5",
+                "supportModify": false
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "name": "选择套餐内饮料",
+            "quantity": 1,
+            "maxQuantity": 1,
+            "minQuantity": 1,
+            "choices": [
+              {
+                "code": "3050",
+                "name": "可乐中杯",
+                "quantity": 1,
+                "maxQuantity": -1,
+                "isDefault": 1,
+                "diffPrice": "+ ¥0",
+                "supportModify": true,
+                "modification": {
+                  "items": [
+                    {
+                      "maxValues": 1,
+                      "minValues": 1,
+                      "values": [
+                        {
+                          "code": "200002",
+                          "price": 0,
+                          "name": "标准",
+                          "maxQuantity": 1,
+                          "minQuantity": 0,
+                          "selectedQuantity": 1,
+                          "selectedKey": "0-1"
+                        },
+                        {
+                          "code": "200002",
+                          "price": 0,
+                          "name": "去冰",
+                          "maxQuantity": 1,
+                          "minQuantity": 0,
+                          "selectedQuantity": 0,
+                          "selectedKey": "0-0"
+                        },
+                        {
+                          "code": "200002",
+                          "price": 0,
+                          "name": "多冰",
+                          "maxQuantity": 1,
+                          "minQuantity": 0,
+                          "selectedQuantity": 0,
+                          "selectedKey": "0-2"
+                        },
+                        {
+                          "code": "200002",
+                          "price": 0,
+                          "name": "少冰",
+                          "maxQuantity": 1,
+                          "minQuantity": 0,
+                          "selectedQuantity": 0,
+                          "selectedKey": "1-1"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "code": "3071",
+                "name": "无糖可口可乐中杯",
+                "quantity": 0,
+                "maxQuantity": -1,
+                "isDefault": 0,
+                "diffPrice": "+ ¥0",
+                "supportModify": true,
+                "modification": {
+                  "items": [
+                    {
+                      "maxValues": 1,
+                      "minValues": 1,
+                      "values": [
+                        {
+                          "code": "200002",
+                          "price": 0,
+                          "name": "标准",
+                          "maxQuantity": 1,
+                          "minQuantity": 0,
+                          "selectedQuantity": 1,
+                          "selectedKey": "0-1"
+                        },
+                        {
+                          "code": "200002",
+                          "price": 0,
+                          "name": "去冰",
+                          "maxQuantity": 1,
+                          "minQuantity": 0,
+                          "selectedQuantity": 0,
+                          "selectedKey": "0-0"
+                        },
+                        {
+                          "code": "200002",
+                          "price": 0,
+                          "name": "多冰",
+                          "maxQuantity": 1,
+                          "minQuantity": 0,
+                          "selectedQuantity": 0,
+                          "selectedKey": "0-2"
+                        },
+                        {
+                          "code": "200002",
+                          "price": 0,
+                          "name": "少冰",
+                          "maxQuantity": 1,
+                          "minQuantity": 0,
+                          "selectedQuantity": 0,
+                          "selectedKey": "1-1"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "image": "https://menu-img.mcd.cn/pcm/prod/menu/20260824/product/MS_9900005453_600.png",
+        "supportModify": false
+      }
+    }
+  ]
+}

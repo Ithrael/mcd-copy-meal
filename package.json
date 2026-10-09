@@ -1,18 +1,19 @@
 {
   "name": "mcd-copy-meal",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "description": "麦麦抄作业：生成、分享和复用点餐攻略",
   "engines": {
-    "node": ">=22"
+    "node": ">=22 <25"
   },
   "scripts": {
     "start": "node --env-file-if-exists=.env.local server.js",
     "dev": "node --watch --env-file-if-exists=.env.local server.js",
     "test": "node --test test/*.test.js",
     "inspect:mcp": "node --env-file-if-exists=.env.local scripts/inspect-mcp.mjs",
-    "check": "node --check server.js && node --check lib/mcd.js && node --check lib/recipes.js && node --check public/app.js"
+    "check": "node --check server.js && node --check lib/mcd.js && node --check lib/meals.js && node --check lib/recipes.js && node --check public/app.js && node --check public/share.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.1",

@@ -11,10 +11,10 @@ const post=async(path,body)=>{
   return {status:response.status,...await response.json()};
 };
 test('HTTP 完整流程：生成攻略，跨门店重新计价，并明确返回超预算状态',async()=>{
-  const generated=await post('/api/generate',{store:{code:'demo-shanghai'},budget:30,mustHave:['麦香鸡','薯条'],includeDrink:true,includeSide:true});
+  const generated=await post('/api/generate',{store:{code:'demo-shanghai'},budget:28,mustHave:['麦香鸡','薯条'],includeDrink:true,includeSide:true});
   assert.equal(generated.status,200);assert.equal(generated.recipes[0].total,2750);
-  const rechecked=await post('/api/reprice',{store:{code:'demo-hangzhou'},budget:30,items:generated.recipes[0].items.map(({name,quantity})=>({name,quantity}))});
-  assert.equal(rechecked.status,200);assert.equal(rechecked.recipe.total,3050);assert.equal(rechecked.overBudget,true);
+  const rechecked=await post('/api/reprice',{store:{code:'demo-hangzhou'},budget:28,items:generated.recipes[0].items.map(({name,quantity,selections})=>({name,quantity,selections}))});
+  assert.equal(rechecked.status,200);assert.equal(rechecked.recipe.total,2850);assert.equal(rechecked.overBudget,true);
 });
 test('HTTP 缺货、恶意份数和跨站请求不会获得成功结果；配置文件不可读取',async()=>{
   const missing=await post('/api/reprice',{store:{code:'demo-hangzhou'},budget:40,items:[{name:'麦香鱼',quantity:1}]});
