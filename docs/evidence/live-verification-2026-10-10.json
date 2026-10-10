@@ -1,0 +1,44 @@
+{
+  "description": "新版接收页面的真实只读核验响应节选与页面检查；仅代表该门店该次核价，不作为运行时菜单或长期报价。",
+  "httpStatus": 200,
+  "mode": "live",
+  "checkedAt": "2026-10-10T02:43:11.776Z",
+  "storeName": "麦当劳上海徐家汇餐厅",
+  "totalCents": 2840,
+  "source": "麦当劳官方实时核价",
+  "items": [
+    {
+      "name": "人气经典随心配",
+      "quantity": 1,
+      "selections": [
+        {
+          "name": "蓝区",
+          "items": [
+            {
+              "name": "麦香鸡",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "name": "粉区",
+          "items": [
+            {
+              "name": "无糖可口可乐中杯",
+              "quantity": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "中薯条",
+      "quantity": 1
+    }
+  ],
+  "browser": {
+    "status": "原样点法已通过核价",
+    "consoleErrors": 0
+  },
+  "couponBenefitVerified": false
+}
