@@ -1,0 +1,21 @@
+{
+  "description": "本地生产模式的浏览器流程检查；所有金额为演示值，不是实时优惠证据。",
+  "mode": "demo",
+  "hasServerToken": false,
+  "viewports": [390, 1280],
+  "horizontalOverflow": false,
+  "checks": {
+    "structuredLinkAndShareTextImport": "passed",
+    "invalidLinkRemainsInImportDialog": "passed",
+    "crossStoreExactChoices": "passed",
+    "demoQuoteCents": 2850,
+    "changedBudgetCents": 2000,
+    "overBudgetCents": 850,
+    "missingProduct": "麦香鱼",
+    "missingProductRemovesOldPriceCards": "passed",
+    "temporaryFailureRemovesOldPriceCards": "passed; artificial HTTP 400 response",
+    "changedChoicesLabelledModified": "passed",
+    "returnToMealComposer": "passed"
+  },
+  "existingAutomatedTestsPassed": 28
+}

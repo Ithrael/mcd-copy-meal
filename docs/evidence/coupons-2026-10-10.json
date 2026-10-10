@@ -1,0 +1,19 @@
+{
+  "description": "真实只读 query-store-coupons 查询的脱敏统计，空券列表不代表实际用券优惠已验证。",
+  "results": [
+    {
+      "checkedAt": "2026-10-10T02:28:45.132Z",
+      "storeName": "上海徐家汇餐厅",
+      "status": "queried",
+      "couponCount": 0
+    },
+    {
+      "checkedAt": "2026-10-10T02:28:45.257Z",
+      "storeName": "上海黄浦华旭国际大厦餐厅",
+      "status": "queried",
+      "couponCount": 0
+    }
+  ],
+  "actualCouponBenefitVerified": false,
+  "writeToolsCalled": false
+}
