@@ -1,6 +1,25 @@
-# 部署到公网
+# 发布在线演示与真实核价服务
 
-本项目需要 Node 服务，不能只把 `public/` 上传到静态托管。当前没有已发布的公网地址。
+## GitHub Pages 演示版
+
+用户已选择此方案。在线演示复用原有界面和配餐规则，提供预算配餐、套餐修改、分享、换演示门店及 PNG 导出。所有价格为示例，不连接账户；真实 MCP 核价由本地 Node 版提供。
+
+仓库包含 `.github/workflows/pages.yml`。在仓库 Pages 设置中选择 GitHub Actions 后，推送到 `main` 会执行检查、测试、静态打包及 Pages 发布。公开地址在部署与浏览器核验成功后补充。
+
+本地构建：
+
+```sh
+npm ci
+npm run build:pages
+```
+
+仅发布 `dist/`，支持项目子路径。输出包含页面、打包 JS、CSS、演示图片、二维码依赖许可和 `.nojekyll`；不包含环境文件、Node 服务或真实响应。演示请求在浏览器完成，不需要 `/api/*` 后端。
+
+依据：[GitHub Pages 静态托管](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages)、[官方 Actions 发布流程](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)。
+
+## 完整实时核价服务（可选）
+
+此模式需要运行现有 Node 服务，GitHub Pages 不能承载它。下面两种后端方案尚未部署。
 
 ## Render
 

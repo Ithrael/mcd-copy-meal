@@ -15,7 +15,7 @@
 - **发给朋友照着点**：复制具体点法和链接，或保存包含照片、门店、金额来源、核价时间与二维码的攻略图。
 - **在自己的门店抄作业**：按名称重新匹配套餐和具体选件，重新核价；缺货显示缺项，超预算显示差额。
 
-无需 Token 即可点击“体验换店核验（演示）”走完一次流程。真实模式连接麦当劳中国官方 MCP，不依赖 LLM API、数据库或前端构建工具。
+无需 Token 即可点击“体验换店核验（演示）”走完一次流程。本地真实模式连接麦当劳中国官方 MCP，不依赖 LLM API、数据库或前端构建。GitHub Pages 演示复用同一份界面与配餐规则，经过静态打包后在浏览器运行。
 
 ## 3 分钟开始
 
@@ -64,7 +64,11 @@ npm start
 
 ## 公网部署
 
-已有 [Render 配置](render.yaml)、[部署步骤](docs/deploy.md)和[当前仓库的 Render 部署入口](https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2FIthrael%2Fmcd-copy-meal)，保持一套 Node 服务即可。**当前尚未发布公网地址。** 部署入口会让你登录平台并检查服务配置，不是在线体验网址。本地链接只适用于运行服务的电脑；部署 HTTPS 后，攻略链接与二维码自动使用网站域名。
+已增加 [GitHub Pages 工作流](.github/workflows/pages.yml)，发布在线演示：配餐、修改套餐、分享和换演示门店均在浏览器完成，PNG 二维码也在浏览器生成。页面、分享文案和攻略图注明示例金额；在线站不接收 MCP Token。真实核价继续在本地版使用。**Pages 公开地址待部署成功并访问核验后补充。**
+
+自行构建静态演示：`npm ci` 后运行 `npm run build:pages`，只发布 `dist/`。该目录不包含 Node 服务、环境文件或账户数据；不能直接把原始 `public/` 当成完整静态站上传。详细步骤见 [部署说明](docs/deploy.md)。
+
+需要网页实时核价时，可另行使用现有 [Render 配置](render.yaml)和[Render 部署入口](https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2FIthrael%2Fmcd-copy-meal)。这属于完整 Node 服务，目前尚未发布。
 
 公开服务不配置共享账户 Token，每位使用者填写自己的 Token；未连接的访客仍可体验明确标注的演示模式。
 
@@ -73,6 +77,7 @@ npm start
 ```sh
 npm run check
 npm test
+npm run build:pages
 npm run inspect:mcp
 ```
 

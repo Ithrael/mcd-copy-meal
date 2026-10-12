@@ -6,17 +6,18 @@
   <meta name="theme-color" content="#D9252A">
   <meta name="description" content="朋友这份麦当劳点法，在我这家店能用吗？保留具体餐品和套餐选件，换门店重新核价，再把结果分享给朋友。">
   <title>麦麦抄作业 · 朋友这份点法，我这里能用吗？</title>
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="stylesheet" href="/style.css">
-  <script type="module" src="/app.js"></script>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.js"></script>
 </head>
 <body>
   <header class="site-header">
-    <a class="brand" href="/" aria-label="麦麦抄作业首页"><span class="brand-icon" aria-hidden="true">抄</span><span>麦麦抄作业</span></a>
+    <a class="brand" href="./" aria-label="麦麦抄作业首页"><span class="brand-icon" aria-hidden="true">抄</span><span>麦麦抄作业</span></a>
     <div class="header-actions"><span id="mode-label" class="mode-label">正在连接</span><button id="connection-button" class="text-button" type="button">连接麦当劳</button></div>
   </header>
   <main class="workspace">
     <div class="page-heading"><div><h1>朋友这份点法，我这里能用吗？</h1><p>保留想吃的那几样，换到你的门店重新核价。</p></div><span class="meal-time">到店取餐 · 一人份</span></div>
+    <p id="hosting-note" class="hosting-note" hidden>在线演示 · 门店、餐品和金额为示例。真实核价请运行本地版。</p>
     <div class="verification-entry"><button id="import-recipe" class="primary-button" type="button">核验朋友的攻略</button><button id="try-verification" class="secondary-button" type="button">体验换店核验（演示）</button><button id="create-own-recipe" class="text-button" type="button" hidden>我也搭一份</button><p>有分享链接就能先看点法；也可以自己搭一份，请朋友核验。</p></div>
     <section id="shared-banner" class="shared-banner" hidden></section>
     <section id="verification-result" class="verification-result" role="status" hidden></section>
@@ -50,7 +51,7 @@
     <form id="store-search-form"><div class="dialog-heading"><h2 id="store-dialog-title">换一家门店</h2><button type="button" class="icon-button close-dialog" aria-label="关闭">×</button></div><div class="store-search"><label>城市<input id="search-city" value="上海" maxlength="30" required></label><label>地址或门店关键词<input id="search-keyword" placeholder="例如：人民广场" maxlength="80" required></label><button type="submit" class="primary-button">找门店</button></div><p id="store-search-note" class="dialog-note"></p><div id="store-list" class="store-list"></div></form>
   </dialog>
   <dialog id="connection-dialog" aria-labelledby="connection-title">
-    <form id="connection-form"><div class="dialog-heading"><h2 id="connection-title">连接你的麦当劳账户</h2><button type="button" class="icon-button close-dialog" aria-label="关闭">×</button></div><p>连接后，按你选的门店读取菜单，并核验搭配价格。</p><label class="field-label" for="token">MCP Token</label><input id="token" type="password" autocomplete="off" spellcheck="false" placeholder="粘贴你在开放平台申请的 Token"><p class="dialog-note">Token 仅保留在本次页面会话中，分享链接和攻略图片不会包含它。</p><div class="dialog-actions"><button type="button" id="demo-button" class="secondary-button">体验演示模式</button><button type="submit" class="primary-button">连接并读取菜单</button></div><a class="platform-link" href="https://open.mcd.cn/mcp" target="_blank" rel="noopener noreferrer">去麦当劳开放平台申请 Token</a></form>
+    <form id="connection-form"><div class="dialog-heading"><h2 id="connection-title">连接你的麦当劳账户</h2><button type="button" class="icon-button close-dialog" aria-label="关闭">×</button></div><div id="live-connection-fields"><p>连接后，按你选的门店读取菜单，并核验搭配价格。</p><label class="field-label" for="token">MCP Token</label><input id="token" type="password" autocomplete="off" spellcheck="false" placeholder="粘贴你在开放平台申请的 Token"><p class="dialog-note">Token 仅保留在本次页面会话中，分享链接和攻略图片不会包含它。</p><button type="submit" class="primary-button">连接并读取菜单</button><a class="platform-link" href="https://open.mcd.cn/mcp" target="_blank" rel="noopener noreferrer">去麦当劳开放平台申请 Token</a></div><div id="pages-connection-note" hidden><p>在线演示使用示例菜单，不接收 Token，也不查询你的账户。</p><p class="dialog-note">下载项目并在本地运行后，可以连接自己的麦当劳账户，读取当前门店菜单并用官方接口核价。</p><a class="platform-link" href="https://github.com/Ithrael/mcd-copy-meal#3-分钟开始" target="_blank" rel="noopener noreferrer">查看本地真实核价使用说明</a></div><div class="dialog-actions"><button type="button" id="demo-button" class="secondary-button">体验演示模式</button></div></form>
   </dialog>
   <dialog id="import-dialog" aria-labelledby="import-title">
     <form id="import-form"><div class="dialog-heading"><h2 id="import-title">核验朋友的攻略</h2><button type="button" class="icon-button close-dialog" aria-label="关闭">×</button></div><label class="field-label" for="recipe-link">麦麦抄作业分享链接或带链接的分享文案</label><textarea id="recipe-link" rows="4" maxlength="12000" required placeholder="粘贴朋友发来的链接或完整分享文案"></textarea><p class="dialog-note">先查看餐品和套餐选件，再选择你的门店核价。</p><p id="import-error" class="error-message" role="alert" hidden></p><div class="dialog-actions"><button type="button" class="secondary-button close-dialog">取消</button><button type="submit" class="primary-button">查看这份点法</button></div></form>

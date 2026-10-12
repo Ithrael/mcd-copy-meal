@@ -12,11 +12,15 @@
     "start": "node --env-file-if-exists=.env.local server.js",
     "dev": "node --watch --env-file-if-exists=.env.local server.js",
     "test": "node --test test/*.test.js",
+    "build:pages": "node scripts/build-pages.mjs",
     "inspect:mcp": "node --env-file-if-exists=.env.local scripts/inspect-mcp.mjs",
-    "check": "node --check server.js && node --check lib/mcd.js && node --check lib/meals.js && node --check lib/recipes.js && node --check public/app.js && node --check public/share.js"
+    "check": "node --check server.js && node --check lib/mcd.js && node --check lib/meals.js && node --check lib/recipes.js && node --check public/app.js && node --check public/share.js && node --check public/pages-demo.js && node --check scripts/build-pages.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.1",
     "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
   }
 }

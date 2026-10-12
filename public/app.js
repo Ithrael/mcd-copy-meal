@@ -1,9 +1,11 @@
 import { encodeShare, decodeShare } from './share.js';
 
+const staticDemo = document.documentElement.dataset.hosting === 'pages' ? await import('./pages-demo.js') : null;
+
 const $ = selector => document.querySelector(selector);
 const money = cents => (cents / 100).toFixed(2).replace(/\.00$/, '');
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const state = { mode:'demo', token:'', hasServerToken:false, store:null, catalog:null, recipes:[], mustHave:[], shared:null, verification:null, editItems:[], busy:false };
+const state = { mode:'demo', token:'', hasServerToken:false, store:null, catalog:null, recipes:[], mustHave:[], shared:null, shareEncoded:null, verification:null, editItems:[], busy:false };
 let toastTimer;
 function toast(message) { $('#toast').textContent = message; $('#toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { $('#toast').hidden = true; }, 4200); }
 function error(message = '', budgetRelated = false) { $('#error-message').textContent = message; $('#error-message').hidden = !message; $('#error-message').dataset.budgetRelated=String(budgetRelated); }
@@ -14,6 +16,7 @@ function busy(active, message = '正在核验菜单与价格…') {
   $('#generate-button').textContent = active ? message : '帮我搭一份';
 }
 async function api(path, body) {
+  if (staticDemo) return staticDemo.demoApi(path,body);
   const headers = {};
   if (state.mode === 'demo') headers['x-demo-mode'] = '1';
   else if (state.token) headers['x-mcd-token'] = state.token;
@@ -26,10 +29,10 @@ async function api(path, body) {
 function renderControls() {
   const catalog = state.catalog;
   $('#mode-label').textContent = state.mode === 'demo' ? '演示模式' : '实时模式';
-  $('#connection-button').textContent = state.mode === 'demo' ? '连接麦当劳' : '连接设置';
+  $('#connection-button').textContent = staticDemo ? '使用真实核价' : state.mode === 'demo' ? '连接麦当劳' : '连接设置';
   $('#try-verification').hidden = state.mode !== 'demo';
   $('#selected-store').innerHTML = `<span class="store-symbol" aria-hidden="true">⌖</span><span><strong>${escape(state.store?.name || '先选一家门店')}</strong><small>${escape(state.store?.address || '搜索城市和门店')}</small></span><span aria-hidden="true">⌄</span>`;
-  $('#source-note').textContent = state.mode === 'demo' ? '演示菜单与示例金额。连接麦当劳账户后，可读取当前门店菜单并核验价格。' : (catalog?.source || '选定门店后，读取当前在售菜单。');
+  $('#source-note').textContent = staticDemo ? '演示菜单与示例金额，不是实时价格。使用真实核价请按说明运行本地版。' : state.mode === 'demo' ? '演示菜单与示例金额。连接麦当劳账户后，可读取当前门店菜单并核验价格。' : (catalog?.source || '选定门店后，读取当前在售菜单。');
   const foods = catalog?.products.flatMap(p=>[...(p.kind!=='bundle'?[p]:[]),...(p.rounds || []).flatMap(r=>r.choices)]) || [];
   const availableNames = new Set(foods.map(p=>p.name));
   const preferred = ['main','side'].flatMap(kind=>[...new Set(foods.filter(p=>p.kind===kind).map(p=>p.name))].slice(0,4));
@@ -44,7 +47,7 @@ function renderVerification(value = state.verification) {
   const box = $('#verification-result'); box.hidden = !value || !state.shared;
   if (box.hidden) return;
   const labels = {pending:'这份点法还未核验',loading:'正在核验这份点法',missing:'缺少餐品，暂不能原样点',unavailable:'暂时无法核验'};
-  let kind = value.kind, title = labels[kind], message = value.message || '先查看具体点法，选好你的门店再核验。真实核价需连接你的麦当劳账户。';
+  let kind = value.kind, title = labels[kind], message = value.message || (staticDemo ? '先查看具体点法，选择演示门店体验核验。真实核价请运行本地版。' : '先查看具体点法，选好你的门店再核验。真实核价需连接你的麦当劳账户。');
   if (value.recipe) {
     const recipe = value.recipe, left = Math.round(Number($('#budget').value)*100) - recipe.total;
     kind = left < 0 ? 'over' : 'ok'; title = value.modified ? '修改后的点法已核价' : '原样点法已通过核价';
@@ -135,14 +138,17 @@ function openStores() {
   if (state.mode === 'demo') searchStores();
   else { $('#store-search-note').textContent = '输入城市和附近地标，查询可用门店。'; $('#store-list').innerHTML = ''; $('#search-city').focus(); }
 }
-function readShared() {
+function readShared(force = false) {
   const encoded = new URLSearchParams(location.hash.slice(1)).get('recipe');
-  if (!encoded) { state.shared = null; document.title='麦麦抄作业 · 朋友这份点法，我这里能用吗？'; renderShared(); renderVerification(null); return; }
+  if (!force && encoded === state.shareEncoded) return false;
+  state.shareEncoded = encoded;
+  if (!encoded) { state.shared = null; document.title='麦麦抄作业 · 朋友这份点法，我这里能用吗？'; renderShared(); renderVerification(null); return true; }
   try {
     state.shared = decodeShare(encoded); $('#budget').value = state.shared.budget/100;
     document.title = `${state.shared.title} · 麦麦抄作业`;
     renderShared(); renderVerification({kind:'pending'});
   } catch (failure) { error(failure.message); state.shared = null; renderShared(); renderVerification(null); }
+  return true;
 }
 function renderShared() {
     document.body.classList.toggle('verifying-recipe',Boolean(state.shared));
@@ -222,7 +228,7 @@ async function submitEdit() {
 }
 function shareURL(recipe) {
   const encoded = encodeShare({v:2,title:recipe.title,budget:Math.round(Number($('#budget').value)*100),items:recipe.items});
-  return `${location.origin}/#recipe=${encoded}`;
+  const link = new URL('./',location.href); link.hash = 'recipe=' + encoded; return link.href;
 }
 const localPreview = () => ['localhost','127.0.0.1','[::1]'].includes(location.hostname);
 const offerNote = recipe => recipe.mode==='demo' ? '示例优惠，仅供体验。' : '本账户可用券参与核价，朋友需确认自己也有适用券。';
@@ -230,7 +236,7 @@ async function share(recipe) {
   try {
     if (!$('#budget').reportValidity()) return;
     const url = shareURL(recipe);
-    const text = [`这份点法，你那里能用吗？｜麦麦抄作业`,recipe.title,`${recipe.mode==='demo'?'示例金额':'本店核价'} ¥${money(recipe.total)} · ${recipe.store.name}`,`核验时间：${new Date(recipe.checkedAt).toLocaleString('zh-CN',{hour12:false})}`,...recipe.items.map(item=>`${item.name} × ${item.quantity}${item.selections?'\n每份选：'+item.selections.flatMap(group=>group.items.map(row=>`${row.name} × ${row.quantity}`)).join(' ＋ '):''}`),...(recipe.offer?[offerNote(recipe)]:[]),'打开链接，保留这份点法，按你自己的门店和账户重新核价。'].join('\n');
+    const text = [`这份点法，你那里能用吗？｜麦麦抄作业`,recipe.title,`${recipe.mode==='demo'?'示例金额':'本店核价'} ¥${money(recipe.total)} · ${recipe.store.name}`,`${recipe.mode==='demo'?'演示生成时间':'核验时间'}：${new Date(recipe.checkedAt).toLocaleString('zh-CN',{hour12:false})}`,...recipe.items.map(item=>`${item.name} × ${item.quantity}${item.selections?'\n每份选：'+item.selections.flatMap(group=>group.items.map(row=>`${row.name} × ${row.quantity}`)).join(' ＋ '):''}`),...(recipe.offer?[offerNote(recipe)]:[]),staticDemo?'打开链接，在演示门店体验换店流程。真实核价请运行本地版。':'打开链接，保留这份点法，按你自己的门店和账户重新核价。'].join('\n');
     if (navigator.share) await navigator.share({title:'麦麦抄作业',text,url});
     else if (navigator.clipboard) { await navigator.clipboard.writeText(`${text}\n${url}`); toast(localPreview()?'点法和本地链接已复制；部署网站后，朋友才能打开。':'点法和攻略链接已复制，发给朋友就能复用。'); }
     else { const area=document.createElement('textarea');area.value=`${text}\n${url}`;document.body.append(area);area.select();document.execCommand('copy');area.remove();toast('点法和攻略链接已复制。'); }
@@ -253,7 +259,7 @@ async function saveImage(recipe, button) {
     const canvas=document.createElement('canvas');canvas.width=1080;const ctx=canvas.getContext('2d');ctx.font=`24px ${font}`;
     const selectionLines=recipe.items.map(item=>item.selections?wrapText(ctx,'每份选：'+item.selections.flatMap(group=>group.items.map(row=>`${row.name} × ${row.quantity}`)).join(' ＋ '),600):[]);
     const rowHeights=selectionLines.map(lines=>Math.max(170,lines.length?160+lines.length*32:170));
-    const note=[localPreview()?'当前二维码指向本机预览，朋友访问前需部署网站。':'餐品、优惠和金额以所选门店当前核验结果为准。',...(recipe.offer?[offerNote(recipe)]:[])].join(' ');
+    const note=[staticDemo?'演示餐品与金额，不是实时价格。扫码进入在线演示，真实核价请运行本地版。':localPreview()?'当前二维码指向本机预览，朋友访问前需部署网站。':'餐品、优惠和金额以所选门店当前核验结果为准。',...(recipe.offer?[offerNote(recipe)]:[])].join(' ');
     ctx.font=`22px ${font}`;const noteLines=wrapText(ctx,note,590);
     const originTop=Math.max(260,170+noteLines.length*34+25);
     const width=1080,height=490+rowHeights.reduce((a,b)=>a+b,0)+Math.max(430,originTop+100);canvas.height=height;
@@ -263,7 +269,7 @@ async function saveImage(recipe, button) {
     ctx.fillStyle='#d9252a';ctx.font='bold 94px Arial';ctx.fillText(`¥${money(recipe.total)}`,100,335);
     ctx.fillStyle='#716d67';ctx.font=`27px ${font}`;ctx.fillText(recipe.mode==='demo'?'示例金额 · 非实时价格':'麦当劳官方实时核价',100,390);
     const storeLines=wrapText(ctx,recipe.store.name,860);storeLines.slice(0,2).forEach((line,index)=>ctx.fillText(line,100,440+index*35));
-    const [images,qr]=await Promise.all([Promise.all(recipe.items.map(item=>item.image?loadImage(item.image):null)),loadImage(`/api/qr?url=${encodeURIComponent(shareURL(recipe))}`)]);
+    const [images,qr]=await Promise.all([Promise.all(recipe.items.map(item=>item.image?loadImage(item.image):null)),staticDemo?staticDemo.qrDataUrl(shareURL(recipe)).then(loadImage):loadImage(`/api/qr?url=${encodeURIComponent(shareURL(recipe))}`)]);
     if(!qr)throw new Error('二维码生成失败。');
     recipe.items.forEach((item,index)=>{
       const top=490+rowHeights.slice(0,index).reduce((a,b)=>a+b,0);ctx.strokeStyle='#e5e7eb';ctx.beginPath();ctx.moveTo(100,top);ctx.lineTo(980,top);ctx.stroke();
@@ -272,11 +278,11 @@ async function saveImage(recipe, button) {
       ctx.fillStyle='#716d67';ctx.font=`28px ${font}`;ctx.fillText(`× ${item.quantity}`,875,top+76);
       if(item.selections){ctx.font=`24px ${font}`;selectionLines[index].forEach((line,i)=>ctx.fillText(line,255,top+130+i*32));}
     });
-    const bottom=490+rowHeights.reduce((a,b)=>a+b,0);ctx.fillStyle='#ffc72c';ctx.fillRect(100,bottom+5,880,64);ctx.fillStyle='#29241e';ctx.font=`bold 28px ${font}`;ctx.fillText(localPreview()?'本地预览 · 部署网站后即可扫码核验':'扫码核验：这份点法，在你这家店能用吗？',128,bottom+47);
+    const bottom=490+rowHeights.reduce((a,b)=>a+b,0);ctx.fillStyle='#ffc72c';ctx.fillRect(100,bottom+5,880,64);ctx.fillStyle='#29241e';ctx.font=`bold 28px ${font}`;ctx.fillText(staticDemo?'扫码体验：换一家演示门店看看结果。':localPreview()?'本地预览 · 部署网站后即可扫码核验':'扫码核验：这份点法，在你这家店能用吗？',128,bottom+47);
     ctx.drawImage(qr,750,bottom+85,230,230);
-    ctx.fillStyle='#716d67';ctx.font=`22px ${font}`;ctx.fillText(`核验时间：${new Date(recipe.checkedAt).toLocaleString('zh-CN',{hour12:false})}`,100,bottom+125);
+    ctx.fillStyle='#716d67';ctx.font=`22px ${font}`;ctx.fillText(`${recipe.mode==='demo'?'演示生成时间':'核验时间'}：${new Date(recipe.checkedAt).toLocaleString('zh-CN',{hour12:false})}`,100,bottom+125);
     noteLines.forEach((line,index)=>ctx.fillText(line,100,bottom+170+index*34));
-    ctx.font=`20px ${font}`;wrapText(ctx,location.origin,590).slice(0,2).forEach((line,index)=>ctx.fillText(line,100,bottom+originTop+index*28));
+    ctx.font=`20px ${font}`;wrapText(ctx,new URL('./',location.href).href,590).slice(0,2).forEach((line,index)=>ctx.fillText(line,100,bottom+originTop+index*28));
     const blob=await new Promise((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(new Error('图片生成失败。')),'image/png'));
     const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=`麦麦抄作业-${recipe.title}.png`;link.click();setTimeout(()=>URL.revokeObjectURL(url),10000);toast(localPreview()?'攻略图已保存，二维码目前指向本地预览。':'带二维码的攻略图已保存，朋友扫码就能复用。');
   } catch { error('攻略图生成失败，请重试或分享攻略链接。'); }
@@ -301,8 +307,9 @@ $('.recipe-results').onclick=event=>{
 };
 document.querySelectorAll('.close-dialog').forEach(button=>button.onclick=()=>button.closest('dialog').close());
 $('#edit-form').onsubmit=event=>{event.preventDefault();submitEdit();};
-$('#connection-button').onclick=()=>{$('#connection-dialog').showModal();$('#token').focus();};
+$('#connection-button').onclick=()=>{$('#connection-dialog').showModal();if(!staticDemo)$('#token').focus();};
 $('#connection-form').onsubmit=async event=>{
+  if(staticDemo){event.preventDefault();return;}
   event.preventDefault();const token=$('#token').value.trim();if(!token&&!state.hasServerToken){toast('请填写 Token，或选择演示模式。');return;}
   state.token=token;state.mode='live';state.store=null;state.catalog=null;state.mustHave=[];$('#token').value='';$('#connection-dialog').close();renderControls();renderRecipes([],{chooseStore:true});renderVerification(state.shared?{kind:'pending'}:null);error();openStores();
 };
@@ -315,19 +322,20 @@ $('#import-form').onsubmit=event=>{
     const text=$('#recipe-link').value.trim(), link=text.match(/https?:\/\/\S+/g)?.find(value=>value.includes('#recipe='));
     if(!link)throw new Error('请粘贴麦麦抄作业的分享链接，链接中应包含 #recipe=。');
     const encoded=new URLSearchParams(new URL(link).hash.slice(1)).get('recipe');
-    const shared=decodeShare(encoded);location.hash='recipe='+encodeShare(shared);readShared();updatePreset();renderRecipes([],{shared:true});error();$('#import-dialog').close();
+    const shared=decodeShare(encoded);location.hash='recipe='+encodeShare(shared);readShared(true);updatePreset();renderRecipes([],{shared:true});error();$('#import-dialog').close();
   }catch(failure){$('#import-error').textContent=failure.message;$('#import-error').hidden=false;}
 };
 $('#try-verification').onclick=async()=>{
   if(state.busy||state.mode!=='demo')return;
   location.hash='recipe='+encodeShare({v:2,title:'麦香鸡套餐点法',budget:3000,items:[{name:'麦香鸡套餐',quantity:1,selections:[{name:'主食',items:[{name:'麦香鸡',quantity:1}]},{name:'小食',items:[{name:'薯条',quantity:1}]},{name:'饮料',items:[{name:'可乐',quantity:1}]}]}]});
-  readShared();updatePreset();
+  readShared(true);updatePreset();
   try{const data=await api('/api/stores');await loadCatalog(data.stores.at(-1),true);}catch(failure){error(failure.message);}
 };
-window.addEventListener('hashchange',()=>{readShared();updatePreset();renderRecipes([],{shared:Boolean(state.shared)});});
+window.addEventListener('hashchange',()=>{if(readShared()){updatePreset();renderRecipes([],{shared:Boolean(state.shared)});}});
 async function boot(){
   try {
-    const status=await fetch('/api/status').then(r=>r.json());state.hasServerToken=status.hasServerToken;state.mode=status.mode;readShared();updatePreset();renderControls();
+    if(staticDemo){$('#hosting-note').hidden=false;$('#live-connection-fields').hidden=true;$('#token').disabled=true;$('#pages-connection-note').hidden=false;$('#connection-title').textContent='使用真实核价';$('#demo-button').textContent='继续体验演示';$('.results-footnote').textContent='当前网页只展示示例流程。真实门店、账户优惠和价格，请在本地版核验。';}
+    const status=staticDemo?await staticDemo.demoApi('/api/status'):await fetch('/api/status').then(r=>r.json());state.hasServerToken=status.hasServerToken;state.mode=status.mode;readShared();updatePreset();renderControls();
     if(state.mode==='live'){renderRecipes([],{chooseStore:true});$('.results').setAttribute('aria-busy','false');openStores();}
     else{const data=await api('/api/stores');await loadCatalog(data.stores[0]);}
   }catch(failure){error(failure.message);$('.results').setAttribute('aria-busy','false');$('#recipe-results').innerHTML='<div class="empty-state"><h3>暂时无法读取菜单</h3><p>请检查服务是否启动，再刷新页面。</p></div>';}
