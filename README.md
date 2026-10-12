@@ -95,6 +95,6 @@ npm run inspect:mcp
 
 原创代码采用 [MIT](LICENSE) 许可。麦当劳名称、商标和餐品图片归各自权利人所有，不在 MIT 授权范围内；图片来源见 [sources.json](public/assets/sources.json)。演示门店、价格和优惠为测试数据，页面与攻略图均标注。
 
-源码已公开于 [Ithrael/mcd-copy-meal](https://github.com/Ithrael/mcd-copy-meal)。官方 [CONTEST_DECLARATION.md](CONTEST_DECLARATION.md) 原样保留。此次开发使用 Codex；未使用 WorkBuddy，不提供虚构的专项开发记录。当前尚未提交参赛报名；报名文案已准备在 [docs/registration.md](docs/registration.md)。
+源码已公开于 [Ithrael/mcd-copy-meal](https://github.com/Ithrael/mcd-copy-meal)。官方 [CONTEST_DECLARATION.md](CONTEST_DECLARATION.md) 原样保留。此次开发使用 Codex；未使用 WorkBuddy，不提供虚构的专项开发记录。2026-10-12 已提交 [参赛报名 Issue #511](https://github.com/M-China/mcd-developer-innovation-challenge/issues/511)，等待官方系统确认；正文与核查记录见 [docs/registration.md](docs/registration.md)。
 
 问题反馈请说明：演示或实时模式、发生时间、操作步骤、脱敏错误信息。不要提交 Token、账户资料或含凭证的网络请求。
