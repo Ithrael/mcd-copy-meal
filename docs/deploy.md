@@ -4,7 +4,9 @@
 
 用户已选择此方案。在线演示复用原有界面和配餐规则，提供预算配餐、套餐修改、分享、换演示门店及 PNG 导出。所有价格为示例，不连接账户；真实 MCP 核价由本地 Node 版提供。
 
-仓库包含 `.github/workflows/pages.yml`。在仓库 Pages 设置中选择 GitHub Actions 后，推送到 `main` 会执行检查、测试、静态打包及 Pages 发布。公开地址在部署与浏览器核验成功后补充。
+公开演示：[https://ithrael.github.io/mcd-copy-meal/](https://ithrael.github.io/mcd-copy-meal/)。2026-10-12 已通过部署工作流与公网浏览器核验。
+
+仓库包含 `.github/workflows/pages.yml`，Pages 已启用 GitHub Actions。推送到 `main` 会执行检查、测试、静态打包及 Pages 发布；失败时不会发布新的产物。
 
 本地构建：
 

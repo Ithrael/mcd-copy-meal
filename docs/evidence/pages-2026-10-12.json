@@ -1,0 +1,38 @@
+{
+  "description": "GitHub Pages 演示发布与浏览器检查；示例金额不作为真实门店或优惠证据。",
+  "url": "https://ithrael.github.io/mcd-copy-meal/",
+  "httpStatus": 200,
+  "hosting": "pages",
+  "mode": "demo",
+  "deployment": "https://github.com/Ithrael/mcd-copy-meal/actions/runs/38207101122",
+  "automatedTestsPassed": 30,
+  "localSubpathChecks": {
+    "generation": true,
+    "crossStoreQuoteCents": 2850,
+    "budgetChangeShowsOverBudget": true,
+    "changedChoicesLabelledModified": true,
+    "shareAndImportFullText": true,
+    "missingProductRemovesOldResult": true,
+    "tokenInputHiddenAndDisabled": true,
+    "nodeConnectionFormPreserved": true
+  },
+  "publicBrowserChecks": {
+    "exactChoicesReprice": true,
+    "imagesLoaded": true,
+    "mobileWidth": 390,
+    "mobileScrollWidth": 390,
+    "apiRequests": 0,
+    "consoleErrors": 0,
+    "pngWidth": 1080,
+    "pngHeight": 1112,
+    "qrDecodedFromExportedPng": true,
+    "qrOrigin": "https://ithrael.github.io",
+    "qrPath": "/mcd-copy-meal/",
+    "qrContainsRecipe": true
+  },
+  "staticArtifactChecks": {
+    "fileCount": 18,
+    "credentialLeaks": 0,
+    "serverOrAccountFiles": 0
+  }
+}
